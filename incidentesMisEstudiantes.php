@@ -31,7 +31,7 @@ $cantidadIncidentesInvestigacion = $sql->fetch(PDO::FETCH_OBJ);
 $sql = $conexion->prepare("SELECT count(*) AS total_incidentes FROM incidentes INNER JOIN estudiantes ON incidentes.estudiante_id = estudiantes.id where estudiantes.tutor_id=:id_tutor and incidentes.estado='resuelto'");
 $sql->execute(array(':id_tutor' => $_SESSION['id_usuario']));
 $sql->execute();
-$cantidadIncidentesResueltos= $sql->fetch(PDO::FETCH_OBJ);
+$cantidadIncidentesResueltos = $sql->fetch(PDO::FETCH_OBJ);
 ?>
 
 <?php include("templates/topbar.php"); ?>
@@ -42,32 +42,17 @@ $cantidadIncidentesResueltos= $sql->fetch(PDO::FETCH_OBJ);
 
     <!-- Panel de Control -->
     <div class="control-panel">
-        <div class="filters">
-            <div class="filter-group">
-                <label for="filter-student">Estudiante</label>
-                <select id="filter-student" class="filter-select">
-                    <option value="all">Todos los estudiantes</option>
-                    <option value="1">María González</option>
-                    <option value="2">Carlos Rodríguez</option>
-                    <option value="3">Ana Martínez</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="filter-status">Estado</label>
-                <select id="filter-status" class="filter-select">
-                    <option value="all">Todos los estados</option>
-                    <option value="open">Abierto</option>
-                    <option value="progress">En progreso</option>
-                    <option value="resolved">Resuelto</option>
-                </select>
-            </div>
+        <div class="filter-group">
+            <label for="filter-status">Estado</label>
+            <select id="filter-status" class="filter-select">
+                <option value="all">Todos los estados</option>
+                <option value="investigacion">Investigación</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="resuelto">Resuelto</option>
+            </select>
         </div>
 
         <div class="actions">
-            <button class="btn btn-primary">
-                <i class="fas fa-download"></i> Exportar
-            </button>
             <button class="btn btn-secondary">
                 <i class="fas fa-filter"></i> Aplicar Filtros
             </button>
@@ -105,20 +90,16 @@ $cantidadIncidentesResueltos= $sql->fetch(PDO::FETCH_OBJ);
                 <p>Incidentes resueltos</p>
             </div>
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon accent">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="stat-info">
-                <h3>65%</h3>
-                <p>Tasa de resolución</p>
-            </div>
-        </div>
     </div>
 
     <!-- Tabla de Incidentes -->
     <div class="incidents-table-container">
+        <?php if (isset($_SESSION['exito'])) : ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> <?= $_SESSION['exito']; ?>
+            </div>
+            <?php unset($_SESSION['exito']); ?>
+        <?php endif; ?>
         <table class="incidents-table">
             <thead>
                 <tr>
@@ -177,7 +158,7 @@ $cantidadIncidentesResueltos= $sql->fetch(PDO::FETCH_OBJ);
                         <td>
                             <div class="action-buttons">
                                 <a href="seguimientoIncidente.php?id_incidente=<?php echo $item->id_incidente; ?>&&id_tutor=<?php echo $_SESSION['id_usuario']; ?>" class="btn-icon btn-comment">
-                                    <i class="fas fa-comment"></i> 
+                                    <i class="fas fa-comment"></i>
                                 </a>
                             </div>
                         </td>
@@ -219,6 +200,25 @@ $cantidadIncidentesResueltos= $sql->fetch(PDO::FETCH_OBJ);
         justify-content: center;
         font-weight: bold;
         font-size: 14px;
+    }
+
+    .alert {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 3px;
+        font-size: 14px;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
     }
 
     .student-details {
@@ -605,5 +605,25 @@ $cantidadIncidentesResueltos= $sql->fetch(PDO::FETCH_OBJ);
         });
     }
 </script>
+<script>
+    function removeAccents(str) {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    document.getElementById('filter-status').addEventListener('change', function() {
+        const statusFilter = removeAccents(this.value.toLowerCase());
+        const rows = document.querySelectorAll('.incidents-table tbody tr');
+
+        rows.forEach(row => {
+            const statusText = removeAccents(row.querySelector('td:nth-child(7) span').textContent.toLowerCase());
+            if (statusFilter === 'all' || statusText === statusFilter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+
 
 <?php include("templates/footer.php"); ?>

@@ -42,6 +42,25 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
             align-items: center;
         }
 
+        .alert {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
         .page-title i {
             margin-right: 10px;
             color: var(--primary);
@@ -327,6 +346,16 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
             </div>
 
             <form id="incidentForm" method="post" action="controladores/registroIncidente.php" enctype="multipart/form-data">
+                <?php if (isset($_SESSION['errores'])) : ?>
+                    <div class="alert alert-danger">
+                        <ul>
+                            <?php foreach ($_SESSION['errores'] as $error) : ?>
+                                <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php unset($_SESSION['errores']); ?>
+                <?php endif; ?>
                 <input type="hidden" id="incidentId" name="usuario_reporta" value="<?php echo $_SESSION['id_usuario']; ?>">
                 <div class="form-row">
                     <div class="form-group">

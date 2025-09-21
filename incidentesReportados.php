@@ -68,6 +68,25 @@ $lista_incidentes = $sql->fetchAll(PDO::FETCH_OBJ);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    .alert {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
     .sidebar-header h2 {
         font-size: 22px;
         font-weight: 600;
@@ -696,6 +715,12 @@ $lista_incidentes = $sql->fetchAll(PDO::FETCH_OBJ);
 
         <!-- Tabla de Incidentes -->
         <div class="incidents-table-container">
+            <?php if (isset($_SESSION['exito'])) : ?>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> <?= $_SESSION['exito']; ?>
+                </div>
+                <?php unset($_SESSION['exito']); ?>
+            <?php endif; ?>
             <table class="incidents-table">
                 <thead>
                     <tr>

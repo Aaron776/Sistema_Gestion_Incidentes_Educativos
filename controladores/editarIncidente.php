@@ -1,4 +1,5 @@
 <?php
+session_start();
 include_once '../conexion/bd.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_incidente'], $_POST['tipo'], $_POST['descripcion'], $_POST['lugar'])) {
@@ -7,6 +8,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_incidente'], $_POST
     $descripcion = trim($_POST['descripcion']);
     $lugar = trim($_POST['lugar']);
     $archivo_incidente = null;
+    $errores=[];
+
+    // ---------------- VALIDACIONES ----------------
+    if (empty($tipo)) {
+        $errores[] = "El tipo es obligatorio.";
+    }
+
+   
+    if (empty($descripcion)) {
+        $errores[] = "La descripción es obligatoria.";
+    }elseif ($descripcion !== strip_tags($descripcion)) {
+        $errores[] = 'No se permiten etiquetas HTML en la descripción';
+    } elseif (preg_match('/(viagra|casino|bitcoin|porno)/i', $descripcion)) {
+        $errores[] = 'La descripción contiene contenido no permitido';
+    }
+
+
+    if (empty($lugar)) {
+        $errores[] = "El lugar es obligatorio.";
+    }elseif ($lugar !== strip_tags($lugar)) {
+        $errores[] = 'No se permiten etiquetas HTML en el lugar';
+    } elseif (preg_match('/(viagra|casino|bitcoin|porno)/i', $lugar)) {
+        $errores[] = 'El lugar contiene contenido no permitido';
+    }
+
 
     // 1. Obtener el archivo viejo de la BD
     $sqlOld = $conexion->prepare("SELECT archivo_incidente FROM incidentes WHERE id = :id_incidente");
@@ -34,19 +60,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_incidente'], $_POST
         $archivo_incidente = $archivoViejo;
     }
 
-    // 4. Actualizar en la BD
-    $sql = $conexion->prepare("UPDATE incidentes SET tipo = :tipo, descripcion = :descripcion, lugar = :lugar, archivo_incidente = :archivo_incidente WHERE id = :id_incidente");
-    $sql->bindParam(':id_incidente', $id_incidente, PDO::PARAM_INT);
-    $sql->bindParam(':tipo', $tipo);
-    $sql->bindParam(':descripcion', $descripcion);
-    $sql->bindParam(':lugar', $lugar);
-    $sql->bindParam(':archivo_incidente', $archivo_incidente);
+    if(empty($errores)){
+        $sql = $conexion->prepare("UPDATE incidentes SET tipo = :tipo, descripcion = :descripcion, lugar = :lugar, archivo_incidente = :archivo_incidente WHERE id = :id_incidente");
+        $sql->bindParam(':id_incidente', $id_incidente, PDO::PARAM_INT);
+        $sql->bindParam(':tipo', $tipo);
+        $sql->bindParam(':descripcion', $descripcion);
+        $sql->bindParam(':lugar', $lugar);
+        $sql->bindParam(':archivo_incidente', $archivo_incidente);
+        $sql->execute();
 
-    if ($sql->execute()) {
+        $_SESSION['exito'] = "Incidente actualizado correctamente.";
         header("Location: ../incidentesReportados.php");
+         exit();
+
+    }else{
+        $_SESSION['errores'] = $errores;
+        header("Location: ../editarIncidente.php?id_incidente=" . $id_incidente);
         exit();
-    } else {
-        echo "Error al editar el incidente";
     }
 } else {
     echo "Error en la solicitud";

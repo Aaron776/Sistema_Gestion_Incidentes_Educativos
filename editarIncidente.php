@@ -38,6 +38,25 @@ $incidente = $sql->fetch(PDO::FETCH_OBJ);
         color: var(--primary);
     }
 
+    .alert {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 3px;
+        font-size: 14px;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
     /* Formulario de Registro de Incidentes */
     .form-container {
         background: white;
@@ -306,109 +325,119 @@ $incidente = $sql->fetch(PDO::FETCH_OBJ);
 
 <?php include("templates/topbar.php"); ?>
 
-    <!-- Dashboard Content -->
-    <div class="dashboard-content">
-        <h1 class="page-title"><i class="fas fa-plus-circle"></i> Editar Incidente</h1>
+<!-- Dashboard Content -->
+<div class="dashboard-content">
+    <h1 class="page-title"><i class="fas fa-plus-circle"></i> Editar Incidente</h1>
 
-        <!-- Formulario de Registro de Incidentes -->
-        <div class="form-container">
-            <div class="form-header">
-                <div class="form-title"><i class="fas fa-exclamation-triangle"></i> Información del Incidente</div>
-                <div class="form-description">Complete todos los campos obligatorios <span class="required">*</span> para registrar un nuevo incidente con un estudiante.</div>
+    <!-- Formulario de Registro de Incidentes -->
+    <div class="form-container">
+        <div class="form-header">
+            <div class="form-title"><i class="fas fa-exclamation-triangle"></i> Información del Incidente</div>
+            <div class="form-description">Complete todos los campos obligatorios <span class="required">*</span> para registrar un nuevo incidente con un estudiante.</div>
+        </div>
+
+        <form id="incidentForm" method="post" action="controladores/editarIncidente.php" enctype="multipart/form-data">
+            <?php if (isset($_SESSION['errores'])) : ?>
+                <div class="alert alert-danger">
+                    <ul>
+                        <?php foreach ($_SESSION['errores'] as $error) : ?>
+                            <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php unset($_SESSION['errores']); ?>
+            <?php endif; ?>
+            <input type="hidden" name="id_incidente" value="<?php echo $id_incidente; ?>">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="incidentTitle">Tipo de Incidente <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-heading"></i>
+                        <select id="incidentCategory" name="tipo" required>
+                            <?php if ($incidente->tipo == 'disciplina') { ?>
+                                <option value="disciplina" selected>Disciplina</option>
+                                <option value="academico">Académico</option>
+                                <option value="convivencia">Convivencia</option>
+                                <option value="otro">Otro</option>
+                            <?php } else if ($incidente->tipo == 'academico') { ?>
+                                <option value="academico" selected>Académico</option>
+                                <option value="disciplina">Disciplina</option>
+                                <option value="convivencia">Convivencia</option>
+                                <option value="otro">Otro</option>
+                            <?php } else if ($incidente->tipo == 'convivencia') { ?>
+                                <option value="convivencia" selected>Convivencia</option>
+                                <option value="disciplina">Disciplina</option>
+                                <option value="academico">Académico</option>
+                                <option value="otro">Otro</option>
+                            <?php } else { ?>
+                                <option value="otro" selected>Otro</option>
+                                <option value="disciplina">Disciplina</option>
+                                <option value="academico">Académico</option>
+                                <option value="convivencia">Convivencia</option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <form id="incidentForm" method="post" action="controladores/editarIncidente.php" enctype="multipart/form-data">
-                <input type="hidden" name="id_incidente" value="<?php echo $id_incidente; ?>">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="incidentTitle">Tipo de Incidente <span class="required">*</span></label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-heading"></i>
-                            <select id="incidentCategory" name="tipo" required>
-                                <?php if ($incidente->tipo == 'disciplina') { ?>
-                                    <option value="disciplina" selected>Disciplina</option>
-                                    <option value="academico">Académico</option>
-                                    <option value="convivencia">Convivencia</option>
-                                    <option value="otro">Otro</option>
-                                <?php } else if ($incidente->tipo == 'academico') { ?>
-                                    <option value="academico" selected>Académico</option>
-                                    <option value="disciplina">Disciplina</option>
-                                    <option value="convivencia">Convivencia</option>
-                                    <option value="otro">Otro</option>
-                                <?php } else if ($incidente->tipo == 'convivencia') { ?>
-                                    <option value="convivencia" selected>Convivencia</option>
-                                    <option value="disciplina">Disciplina</option>
-                                    <option value="academico">Académico</option>
-                                    <option value="otro">Otro</option>
-                                <?php }else{ ?>
-                                    <option value="otro" selected>Otro</option>
-                                    <option value="disciplina">Disciplina</option>
-                                    <option value="academico">Académico</option>
-                                    <option value="convivencia">Convivencia</option>
-                                <?php } ?>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="incidentPriority">Lugar <span class="required">*</span></label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <input type="text" id="incidentPriority" name="lugar" placeholder="Ej: Laboratorio 1" value="<?php echo $incidente->lugar; ?>" required>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="incidentTime">Evidencia <span class="required">*</span></label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-camera"></i>
-                            <input type="file" id="incidentTime" name="archivo_incidente">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group full-width">
-                    <label for="incidentDescription">Descripción Detallada <span class="required">*</span></label>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="incidentPriority">Lugar <span class="required">*</span></label>
                     <div class="input-with-icon">
-                        <i class="fas fa-align-left"></i>
-                        <textarea id="incidentDescription" name="descripcion" placeholder="Describa el incidente con todos los detalles relevantes..." required> <?php echo $incidente->descripcion; ?></textarea>
+                        <i class="fas fa-map-marker-alt"></i>
+                        <input type="text" id="incidentPriority" name="lugar" placeholder="Ej: Laboratorio 1" value="<?php echo $incidente->lugar; ?>" required>
                     </div>
                 </div>
+            </div>
 
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" id="btnCancel">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Editar Incidente</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="incidentTime">Evidencia <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-camera"></i>
+                        <input type="file" id="incidentTime" name="archivo_incidente">
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="incidentDescription">Descripción Detallada <span class="required">*</span></label>
+                <div class="input-with-icon">
+                    <i class="fas fa-align-left"></i>
+                    <textarea id="incidentDescription" name="descripcion" placeholder="Describa el incidente con todos los detalles relevantes..." required> <?php echo $incidente->descripcion; ?></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="btnCancel">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Editar Incidente</button>
+            </div>
+        </form>
     </div>
-    </div>
+</div>
+</div>
 
-    <script>
-        // Toggle sidebar on mobile
-        document.getElementById('menuToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('open');
-            document.querySelector('.overlay').classList.toggle('open');
-        });
+<script>
+    // Toggle sidebar on mobile
+    document.getElementById('menuToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('open');
+        document.querySelector('.overlay').classList.toggle('open');
+    });
 
-        // Close sidebar when clicking overlay
-        document.querySelector('.overlay').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.remove('open');
-            document.querySelector('.overlay').classList.remove('open');
-        });
+    // Close sidebar when clicking overlay
+    document.querySelector('.overlay').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.remove('open');
+        document.querySelector('.overlay').classList.remove('open');
+    });
 
-        // Set current date and time as default
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const dateString = now.toISOString().split('T')[0];
-            const timeString = now.toTimeString().substring(0, 5);
+    // Set current date and time as default
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const dateString = now.toISOString().split('T')[0];
+        const timeString = now.toTimeString().substring(0, 5);
 
-            document.getElementById('incidentDate').value = dateString;
-            document.getElementById('incidentTime').value = timeString;
-        });
-    </script>
+        document.getElementById('incidentDate').value = dateString;
+        document.getElementById('incidentTime').value = timeString;
+    });
+</script>
 <?php include 'templates/footer.php'; ?>

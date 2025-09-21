@@ -67,6 +67,23 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["nombre"], $_POST["telef
         $errores[] = "El tutor es obligatorio.";
     }
 
+    // Verificar duplicados
+    if (empty($errores)) {
+        try {
+            $check_sql = $conexion->prepare("SELECT COUNT(*) FROM estudiantes WHERE email = :email OR telefono = :telefono ");
+            $check_sql->bindParam(':email', $email);
+            $check_sql->bindParam(':telefono', $telefono);
+            $check_sql->execute();
+
+            if ($check_sql->fetchColumn() > 0) {
+                $errores[] = "El email o el telefono ya estan registrados.";
+            }
+        } catch (PDOException $e) {
+            error_log("Error verificando duplicados: " . $e->getMessage());
+            $errores[] = "Error interno. Intenta nuevamente.";
+        }
+    }
+
 
     // Si no hay errores de validacion se inserta el estudiante en la base de datos
     if(empty($errores)){

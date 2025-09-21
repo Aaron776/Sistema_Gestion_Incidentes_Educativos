@@ -38,11 +38,29 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["nombre"], $_POST["email
         $errores[] = "El rol es obligatorio.";
     }
 
+    // Verificar duplicados
+    if (empty($errores)) {
+        try {
+            $duplicado = $conexion->prepare("SELECT COUNT(*) FROM usuarios WHERE email = :email");
+            $duplicado->bindParam(':email', $email);
+            $duplicado->execute();
+
+            if ($duplicado->fetchColumn() > 0) {
+                $errores[] = "El email ya está registrado.";
+            }
+        } catch (PDOException $e) {
+            error_log("Error verificando duplicados: " . $e->getMessage());
+            $errores[] = "Error interno. Intenta nuevamente.";
+        }
+    }
+
     if(empty($errores)){
+        $password_ecriptada = password_hash($password, PASSWORD_DEFAULT);
+        
         $sql = $conexion->prepare("INSERT INTO usuarios (nombre,email,password,rol) VALUES (:nombre,:email,:password,:rol)");
         $sql->bindParam(':nombre', $nombre);
         $sql->bindParam(':email', $email);
-        $sql->bindParam(':password', $password);
+        $sql->bindParam(':password', $password_ecriptada);
         $sql->bindParam(':rol', $rol);
         $sql->execute();
 

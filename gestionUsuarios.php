@@ -31,11 +31,6 @@ $usuarios = $sql->fetchAll(PDO::FETCH_OBJ);
                 <option value="docente">Docente</option>
                 <option value="tutor">Tutor</option>
             </select>
-            <select class="filter-select" id="statusFilter">
-                <option value="">Todos los estados</option>
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-            </select>
         </div>
     </div>
 

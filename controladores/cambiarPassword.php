@@ -34,10 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password_actual']) &&
         $sql->execute();
         $usuario = $sql->fetch(PDO::FETCH_OBJ);
 
-        if ($usuario && $password_actual === $usuario->password) {
+        if ($usuario && password_verify($password_actual, $usuario->password)) {
             // Actualizar contraseña
+            $nueva_password_encriptada = password_hash($nueva_password, PASSWORD_DEFAULT);
             $sql = $conexion->prepare("UPDATE usuarios SET password = :nueva_password WHERE id = :id_usuario");
-            $sql->bindParam(':nueva_password', $nueva_password);
+            $sql->bindParam(':nueva_password', $nueva_password_encriptada);
             $sql->bindParam(':id_usuario', $id_usuario);
             $sql->execute();
 
@@ -49,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password_actual']) &&
         header("Location: ../cambiarPassword.php");
         exit();
     } else {
+        $errores['password_actual'] = "La contraseña actual no es correcta.";
         $_SESSION['errores'] = $errores;
         header("Location: ../cambiarPassword.php");
         exit();

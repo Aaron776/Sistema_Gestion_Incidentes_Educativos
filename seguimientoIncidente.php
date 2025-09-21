@@ -21,7 +21,7 @@ $sql->execute();
 $cantidadComentarios = $sql->fetch(PDO::FETCH_OBJ);
 
 // Obtener la lista de comentarios de este incidente de mi estudiante
-$sql=$conexion->prepare("SELECT * FROM comentarios_incidente WHERE incidente_id=:id_incidente ORDER BY fecha DESC LIMIT 10");
+$sql = $conexion->prepare("SELECT * FROM comentarios_incidente WHERE incidente_id=:id_incidente ORDER BY fecha DESC LIMIT 10");
 $sql->bindParam(':id_incidente', $id_incidente);
 $sql->execute();
 $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
@@ -38,13 +38,23 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
     <div class="comment-form-card">
         <h3><i class="fas fa-plus-circle"></i> Agregar Nuevo Comentario</h3>
         <form id="commentForm" class="comment-form" method="post" action="controladores/seguimientoIncidente.php">
-        <input type="hidden" name="incidente_id" value="<?php echo $id_incidente; ?>">
-        <input type="hidden" name="tutor_id" value="<?php echo $id_tutor; ?>">
+            <?php if (isset($_SESSION['errores'])) : ?>
+                <div class="alert alert-danger">
+                    <ul>
+                        <?php foreach ($_SESSION['errores'] as $error) : ?>
+                            <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php unset($_SESSION['errores']); ?>
+            <?php endif; ?>
+            <input type="hidden" name="incidente_id" value="<?php echo $id_incidente; ?>">
+            <input type="hidden" name="tutor_id" value="<?php echo $id_tutor; ?>">
             <div class="form-group">
                 <label for="commentText">Comentario <span class="required">*</span></label>
                 <textarea id="commentText" name="comentario" class="form-control" rows="4" placeholder="Escribe tu comentario aquí..." required></textarea>
             </div>
-            
+
             <div class="form-actions">
                 <button type="button" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancelar
@@ -62,7 +72,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
             <h3><i class="fas fa-list"></i> Comentarios Existentes</h3>
             <span class="comments-count"><?php echo $cantidadComentarios->total_comentarios; ?> comentarios</span>
         </div>
-        
+
         <div class="comments-list">
             <?php foreach ($comentarios as $item) { ?>
                 <div class="comment-item">
@@ -110,48 +120,67 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         margin-bottom: 25px;
         border-left: 5px solid var(--primary);
     }
-    
+
+    .alert {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 3px;
+        font-size: 14px;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
     .incident-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         margin-bottom: 20px;
     }
-    
+
     .incident-header h3 {
         color: var(--dark);
         font-size: 20px;
         margin: 0;
         flex: 1;
     }
-    
+
     .incident-details {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 15px;
     }
-    
+
     .detail-item {
         display: flex;
         align-items: center;
         gap: 10px;
     }
-    
+
     .detail-label {
         font-weight: 600;
         color: #666;
         min-width: 100px;
     }
-    
+
     .detail-label i {
         width: 20px;
         color: var(--primary);
     }
-    
+
     .detail-value {
         color: #333;
     }
-    
+
     /* Formulario de comentarios */
     .comment-form-card {
         background: white;
@@ -160,7 +189,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         margin-bottom: 30px;
     }
-    
+
     .comment-form-card h3 {
         color: var(--dark);
         margin-bottom: 20px;
@@ -169,25 +198,25 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         align-items: center;
         gap: 10px;
     }
-    
+
     .comment-form {
         display: flex;
         flex-direction: column;
         gap: 20px;
     }
-    
+
     .form-group {
         display: flex;
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .form-group label {
         font-weight: 600;
         color: #333;
         font-size: 14px;
     }
-    
+
     .form-control {
         padding: 12px 15px;
         border: 2px solid #e6e6e6;
@@ -196,12 +225,12 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         font-family: inherit;
         transition: border-color 0.3s;
     }
-    
+
     .form-control:focus {
         outline: none;
         border-color: var(--primary);
     }
-    
+
     .form-control.select {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
@@ -209,12 +238,12 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         background-size: 16px;
         appearance: none;
     }
-    
+
     textarea.form-control {
         resize: vertical;
         min-height: 100px;
     }
-    
+
     .checkbox-label {
         display: flex;
         align-items: center;
@@ -222,11 +251,11 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         cursor: pointer;
         font-weight: normal;
     }
-    
+
     .checkbox-label input[type="checkbox"] {
         display: none;
     }
-    
+
     .checkmark {
         width: 20px;
         height: 20px;
@@ -237,29 +266,29 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         justify-content: center;
         transition: all 0.3s;
     }
-    
-    .checkbox-label input[type="checkbox"]:checked + .checkmark {
+
+    .checkbox-label input[type="checkbox"]:checked+.checkmark {
         background: var(--primary);
         border-color: var(--primary);
     }
-    
-    .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+
+    .checkbox-label input[type="checkbox"]:checked+.checkmark::after {
         content: '✓';
         color: white;
         font-size: 12px;
     }
-    
+
     .form-actions {
         display: flex;
         gap: 15px;
         justify-content: flex-end;
         margin-top: 10px;
     }
-    
+
     .required {
         color: var(--warning);
     }
-    
+
     /* Lista de comentarios */
     .comments-list-section {
         background: white;
@@ -267,7 +296,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         padding: 25px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     }
-    
+
     .section-header {
         display: flex;
         justify-content: space-between;
@@ -276,7 +305,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         padding-bottom: 15px;
         border-bottom: 1px solid #eee;
     }
-    
+
     .section-header h3 {
         color: var(--dark);
         margin: 0;
@@ -285,7 +314,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         align-items: center;
         gap: 10px;
     }
-    
+
     .comments-count {
         background: var(--primary);
         color: white;
@@ -294,37 +323,37 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         font-size: 12px;
         font-weight: 600;
     }
-    
+
     .comments-list {
         display: flex;
         flex-direction: column;
         gap: 20px;
     }
-    
+
     .comment-item {
         border: 1px solid #e6e6e6;
         border-radius: 10px;
         padding: 20px;
         transition: box-shadow 0.3s;
     }
-    
+
     .comment-item:hover {
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
-    
+
     .comment-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         margin-bottom: 15px;
     }
-    
+
     .comment-author-info {
         display: flex;
         align-items: center;
         gap: 12px;
     }
-    
+
     .author-avatar {
         width: 45px;
         height: 45px;
@@ -337,16 +366,16 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         font-weight: bold;
         font-size: 16px;
     }
-    
+
     .author-details {
         line-height: 1.3;
     }
-    
+
     .author-name {
         font-weight: 600;
         color: var(--dark);
     }
-    
+
     .comment-type {
         font-size: 12px;
         color: var(--primary);
@@ -355,39 +384,39 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         border-radius: 12px;
         display: inline-block;
     }
-    
+
     .comment-meta {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
         gap: 8px;
     }
-    
+
     .comment-date {
         font-size: 12px;
         color: #888;
     }
-    
+
     .comment-actions {
         display: flex;
         gap: 5px;
     }
-    
+
     .comment-content {
         margin-bottom: 15px;
     }
-    
+
     .comment-content p {
         color: #333;
         line-height: 1.6;
         margin: 0;
     }
-    
+
     .comment-footer {
         display: flex;
         justify-content: flex-end;
     }
-    
+
     .comment-status {
         font-size: 12px;
         color: var(--success);
@@ -395,7 +424,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         align-items: center;
         gap: 5px;
     }
-    
+
     /* Botones */
     .btn {
         padding: 10px 16px;
@@ -409,25 +438,25 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         align-items: center;
         gap: 8px;
     }
-    
+
     .btn-primary {
         background: var(--primary);
         color: white;
     }
-    
+
     .btn-primary:hover {
         background: var(--secondary);
     }
-    
+
     .btn-secondary {
         background: #f5f7fb;
         color: #555;
     }
-    
+
     .btn-secondary:hover {
         background: #e6e9ef;
     }
-    
+
     .btn-icon {
         width: 32px;
         height: 32px;
@@ -440,52 +469,52 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
         border: none;
         font-size: 14px;
     }
-    
+
     .btn-edit {
         background: rgba(76, 201, 240, 0.15);
         color: var(--success);
     }
-    
+
     .btn-edit:hover {
         background: var(--success);
         color: white;
     }
-    
+
     .btn-delete {
         background: rgba(247, 37, 133, 0.15);
         color: var(--warning);
     }
-    
+
     .btn-delete:hover {
         background: var(--warning);
         color: white;
     }
-    
+
     @media (max-width: 768px) {
         .incident-header {
             flex-direction: column;
             gap: 10px;
         }
-        
+
         .incident-details {
             grid-template-columns: 1fr;
         }
-        
+
         .comment-header {
             flex-direction: column;
             gap: 10px;
         }
-        
+
         .comment-meta {
             flex-direction: row;
             justify-content: space-between;
             width: 100%;
         }
-        
+
         .form-actions {
             flex-direction: column;
         }
-        
+
         .btn {
             width: 100%;
             justify-content: center;
