@@ -1,16 +1,24 @@
 <?php
 include("autorizacion/auth.php");
 
-if ($_SESSION['rol'] !== 'admin') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
 
+
 include("templates/header.php");
 include("conexion/bd.php");
 
+if (!isset($_GET['id_incidente']) || !filter_var($_GET['id_incidente'], FILTER_VALIDATE_INT)) {
+    $_SESSION['errores'] = ["El identificador del incidente no es válido."];
+    header("Location: gestionIncidentes.php");
+    exit();
+}
+
 // Obtener el ID del incidente desde la URL
-$id_incidente = isset($_GET['id_incidente']) ? $_GET['id_incidente'] : '';
+$id_incidente = (int) $_GET['id_incidente'];
 
 
 // Obtener información del incidente
@@ -22,6 +30,13 @@ $sql = $conexion->prepare("SELECT incidentes.*, estudiantes.nombre AS nombre_est
 $sql->bindParam(':id_incidente', $id_incidente, PDO::PARAM_INT);
 $sql->execute();
 $incidente = $sql->fetch(PDO::FETCH_OBJ);
+
+if (!$incidente) {
+    $_SESSION['errores'] = ["No se encontró el incidente solicitado."];
+    header("Location: gestionIncidentes.php");
+    exit();
+}
+
 ?>
 
 <?php include("templates/topbar.php"); ?>
@@ -50,49 +65,50 @@ $incidente = $sql->fetch(PDO::FETCH_OBJ);
                         </div>
                         <?php unset($_SESSION['errores']); ?>
                     <?php endif; ?>
-                    <input type="hidden" name="id_incidente" value="<?php echo $incidente->id; ?>">
+                    <input type="hidden" name="id_incidente" value="<?php echo  htmlspecialchars($incidente->id); ?>">
                     <div class="form-group">
                         <label>Descripción del Incidente</label>
-                        <div class="form-control-static"><?php echo $incidente->descripcion; ?></div>
+                        <div class="form-control-static"><?php echo  htmlspecialchars($incidente->descripcion); ?></div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Estudiante</label>
-                            <div class="form-control-static"><?php echo $incidente->nombre_estudiante; ?></div>
+                            <div class="form-control-static"><?php echo  htmlspecialchars($incidente->nombre_estudiante); ?></div>
                         </div>
 
                         <div class="form-group">
                             <label>Reportado por</label>
-                            <div class="form-control-static"><?php echo $incidente->usuario_reporta; ?></div>
+                            <div class="form-control-static"><?php echo  htmlspecialchars($incidente->usuario_reporta); ?></div>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Fecha del Incidente</label>
-                            <div class="form-control-static"><?php echo $incidente->fecha_incidente; ?></div>
+                            <div class="form-control-static"><?php echo  htmlspecialchars($incidente->fecha_incidente); ?></div>
                         </div>
 
                         <div class="form-group">
                             <label>Hora del Incidente</label>
-                            <div class="form-control-static"><?php echo $incidente->hora_incidente; ?></div>
+                            <div class="form-control-static"><?php echo  htmlspecialchars($incidente->hora_incidente); ?></div>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label>Lugar</label>
-                        <div class="form-control-static"><?php echo $incidente->lugar; ?></div>
+                        <div class="form-control-static"><?php echo  htmlspecialchars($incidente->lugar); ?></div>
                     </div>
 
                     <div class="form-group">
                         <label>Tipo</label>
-                        <div class="form-control-static"><?php echo $incidente->tipo; ?></div>
+                        <div class="form-control-static"><?php echo  htmlspecialchars($incidente->tipo); ?></div>
                     </div>
 
                     <div class="form-group">
                         <label for="estado">Estado Actual *</label>
                         <select class="form-control" id="estado" name="estado" required>
+                            <option value="" disabled>Seleccione un estado</option>
                             <option value="investigacion" <?php echo $incidente->estado == 'investigacion' ? 'selected' : ''; ?>>Investigación</option>
                             <option value="pendiente" <?php echo $incidente->estado == 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
                             <option value="resuelto" <?php echo $incidente->estado == 'resuelto' ? 'selected' : ''; ?>>Resuelto</option>

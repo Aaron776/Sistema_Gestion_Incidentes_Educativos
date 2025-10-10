@@ -1,10 +1,12 @@
 <?php
 include("autorizacion/auth.php");
 
-if ($_SESSION['rol'] !== 'admin') {
+if (empty($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
+
 include("templates/header.php");
 include("conexion/bd.php");
 
@@ -20,6 +22,12 @@ $sql = $conexion->prepare("SELECT estudiantes.id, estudiantes.tutor_id, estudian
 $sql->bindParam(':id_estudiante', $id_estudiante);
 $sql->execute();
 $estudiante = $sql->fetch(PDO::FETCH_OBJ);
+
+if (!$estudiante) {
+    $_SESSION['errores'] = ["No se encontró el estudiante solicitado."];
+    header("Location: gestionEstudiantes.php");
+    exit();
+}
 ?>
 
 <?php include("templates/topbar.php"); ?>
@@ -57,27 +65,27 @@ $estudiante = $sql->fetch(PDO::FETCH_OBJ);
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="nombre">Nombre *</label>
-                        <input type="text" id="nombre" name="nombre" required placeholder="Ingrese los nombres" value="<?php echo $estudiante->nombre; ?>">
+                        <input type="text" id="nombre" name="nombre" required placeholder="Ingrese los nombres" value="<?php echo htmlspecialchars($estudiante->nombre); ?>">
                         <span class="form-help">Ej: María José</span>
                     </div>
                     <div class="form-group">
                         <label for="apellido">Apellido *</label>
-                        <input type="text" id="apellido" name="apellido" required placeholder="Ingrese los apellidos" value="<?php echo $estudiante->apellido; ?>">
+                        <input type="text" id="apellido" name="apellido" required placeholder="Ingrese los apellidos" value="<?php echo htmlspecialchars($estudiante->apellido); ?>">
                         <span class="form-help">Ej: Rodríguez Rodríguez</span>
                     </div>
                     <div class="form-group">
                         <label for="email">Correo Electrónico *</label>
-                        <input type="email" id="email" name="email" required placeholder="usuario@instituto.edu" value="<?php echo $estudiante->email; ?>">
+                        <input type="email" id="email" name="email" required placeholder="usuario@instituto.edu" value="<?php echo htmlspecialchars($estudiante->email); ?>">
                         <span class="form-help">Debe ser un correo valido</span>
                     </div>
                     <div class="form-group">
                         <label for="grado">Grado/Curso *</label>
-                        <input type="text" id="grado" name="curso" required placeholder="Ingrese el grado o curso" value="<?php echo $estudiante->curso; ?>">
+                        <input type="text" id="grado" name="curso" required placeholder="Ingrese el grado o curso" value="<?php echo htmlspecialchars($estudiante->curso); ?>">
                         <span class="form-help">Debe ser un curso valido</span>
                     </div>
                     <div class="form-group">
                         <label for="telefono">Telefono *</label>
-                        <input type="text" id="telefono" name="telefono" required placeholder="Ingrese el telefono" value="<?php echo $estudiante->telefono; ?>">
+                        <input type="text" id="telefono" name="telefono" required placeholder="Ingrese el telefono" value="<?php echo htmlspecialchars($estudiante->telefono); ?>">
                         <span class="form-help">Debe ser un telefono valido</span>
                     </div>
                 </div>
@@ -110,7 +118,7 @@ $estudiante = $sql->fetch(PDO::FETCH_OBJ);
                     <i class="fas fa-redo"></i> Limpiar
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Crear Estudiante
+                    <i class="fas fa-edit"></i> Editar Estudiante
                 </button>
             </div>
         </form>

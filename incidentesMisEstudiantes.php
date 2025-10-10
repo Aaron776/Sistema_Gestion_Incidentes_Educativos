@@ -1,8 +1,9 @@
 <?php
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
-// Verificar que tenga rol de tutor
-if ($_SESSION['rol'] !== 'tutor') {
+// Validar que esté logueado y sea tutor
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'tutor') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
@@ -24,13 +25,11 @@ $cantidadEstudiantes = $sql->fetch(PDO::FETCH_OBJ);
 // Obtener cantidad de incidentes en estado de investigacion
 $sql = $conexion->prepare("SELECT count(*) AS total_incidentes FROM incidentes INNER JOIN estudiantes ON incidentes.estudiante_id = estudiantes.id where estudiantes.tutor_id=:id_tutor and incidentes.estado='investigacion'");
 $sql->execute(array(':id_tutor' => $_SESSION['id_usuario']));
-$sql->execute();
 $cantidadIncidentesInvestigacion = $sql->fetch(PDO::FETCH_OBJ);
 
 // Obtener cantidad de incidentes en estado de resuelto
 $sql = $conexion->prepare("SELECT count(*) AS total_incidentes FROM incidentes INNER JOIN estudiantes ON incidentes.estudiante_id = estudiantes.id where estudiantes.tutor_id=:id_tutor and incidentes.estado='resuelto'");
 $sql->execute(array(':id_tutor' => $_SESSION['id_usuario']));
-$sql->execute();
 $cantidadIncidentesResueltos = $sql->fetch(PDO::FETCH_OBJ);
 ?>
 
@@ -119,18 +118,18 @@ $cantidadIncidentesResueltos = $sql->fetch(PDO::FETCH_OBJ);
                     <tr>
                         <td>
                             <div class="student-info">
-                                <div class="student-avatar"><?php echo substr($item->nombre_estudiante, 0, 1); ?></div>
+                                <div class="student-avatar"><?php echo htmlspecialchars(substr($item->nombre_estudiante, 0, 1)); ?></div>
                                 <div class="student-details">
-                                    <div class="student-name"><?php echo $item->nombre_estudiante; ?> <?php echo $item->apellido_estudiante; ?></div>
-                                    <div class="student-id">ID: <?php echo $item->id_incidente; ?></div>
+                                    <div class="student-name"><?php echo htmlspecialchars($item->nombre_estudiante); ?> <?php echo htmlspecialchars($item->apellido_estudiante); ?></div>
+                                    <div class="student-id">ID: <?php echo htmlspecialchars($item->id_incidente); ?></div>
                                 </div>
                             </div>
                         </td>
-                        <td><?php echo $item->fecha_incidente; ?></td>
-                        <td><?php echo $item->hora_incidente; ?></td>
-                        <td><?php echo $item->lugar; ?></td>
-                        <td><?php echo $item->tipo; ?></td>
-                        <td><?php echo $item->descripcion; ?></td>
+                        <td><?php echo htmlspecialchars($item->fecha_incidente); ?></td>
+                        <td><?php echo htmlspecialchars($item->hora_incidente); ?></td>
+                        <td><?php echo htmlspecialchars($item->lugar); ?></td>
+                        <td><?php echo htmlspecialchars($item->tipo); ?></td>
+                        <td><?php echo htmlspecialchars($item->descripcion); ?></td>
                         <td>
                             <?php if ($item->estado == 'investigacion') : ?>
                                 <span class="status-tag status-progress">Investigación</span>

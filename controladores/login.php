@@ -17,10 +17,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
         $errores[] = "La contraseña no puede estar vacía.";
     }
 
+    // Control de intentos fallidos
+    if (!isset($_SESSION['intentos'])) {
+        $_SESSION['intentos'] = 0;
+    }
+
+    if ($_SESSION['intentos'] >= 5) {
+        $_SESSION['errores'] = ["Demasiados intentos fallidos. Intenta nuevamente más tarde."];
+        header("Location: ../index.php");
+        exit();
+    }
+
     if (empty($errores)) {
         // Buscar usuario en la base de datos
         $stmt = $conexion->prepare("SELECT id,nombre,email,rol,password FROM usuarios WHERE email = :email");
-        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -31,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
             $_SESSION['nombre'] = $user->nombre;
             $_SESSION['rol'] = $user->rol;
             $_SESSION['logueado'] = true;
+
+            // Reinicia el contador de intentos fallidos
+            $_SESSION['intentos'] = 0;
 
             switch ($user->rol) {
                 case 'admin':
@@ -48,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
             }
         } else {
             // Credenciales incorrectas
+            $_SESSION['intentos']++;
             $errores[] = "Email o contraseña incorrectos.";
             $_SESSION['errores'] = $errores;
             header("Location: ../index.php");
@@ -60,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
         exit();
     }
 } else {
-    echo "Error en la solicitud";
+    $_SESSION['errores'] = ["Error al iniciar sesión."];
+    header("Location: ../index.php");
+    exit();
 }
 ?>

@@ -2,8 +2,9 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de docente
-if ($_SESSION['rol'] !== 'docente') {
-    header("Location: index.php"); // lo mandamos al login
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'docente') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
+    header("Location: index.php");
     exit();
 }
 
@@ -379,7 +380,7 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
                             <select id="incidentCategory" name="estudiante" required>
                                 <option value="">Seleccione un estudiante</option>
                                 <?php foreach ($estudiantes as $item) { ?>
-                                    <option value="<?php echo $item->id; ?>"><?php echo $item->nombre . ' ' . $item->apellido; ?></option>
+                                    <option value="<?php echo $item->id; ?>"><?php echo htmlspecialchars($item->nombre . ' ' . $item->apellido); ?></option>
                                 <?php } ?>
                             </select>
                         </div>

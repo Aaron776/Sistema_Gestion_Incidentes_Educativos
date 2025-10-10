@@ -1,9 +1,13 @@
 <?php
 include("autorizacion/auth.php");
-if ($_SESSION['rol'] !== 'admin') {
+
+// Validar que esté logueado y sea admin
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
+
 include("templates/header.php");
 include("conexion/bd.php");
 
@@ -24,14 +28,12 @@ $usuarios = $sql->fetchAll(PDO::FETCH_OBJ);
                 <i class="fas fa-plus"></i> Nuevo Usuario
             </a>
         </div>
-        <div class="header-filters">
-            <select class="filter-select" id="roleFilter">
-                <option value="">Todos los roles</option>
-                <option value="administrador">Administrador</option>
-                <option value="docente">Docente</option>
-                <option value="tutor">Tutor</option>
-            </select>
-        </div>
+        <select class="filter-select" id="roleFilter">
+            <option value="">Todos los roles</option>
+            <option value="admin">Administrador</option>
+            <option value="docente">Docente</option>
+            <option value="tutor">Tutor</option>
+        </select>
     </div>
 
     <div class="table-container">
@@ -40,6 +42,16 @@ $usuarios = $sql->fetchAll(PDO::FETCH_OBJ);
                 <i class="fas fa-check-circle"></i> <?= $_SESSION['exito']; ?>
             </div>
             <?php unset($_SESSION['exito']); ?>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['errores'])) : ?>
+            <div class="alert alert-danger">
+                <ul>
+                    <?php foreach ($_SESSION['errores'] as $error) : ?>
+                        <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php unset($_SESSION['errores']); ?>
         <?php endif; ?>
         <table class="crud-table">
             <thead>
@@ -63,7 +75,7 @@ $usuarios = $sql->fetchAll(PDO::FETCH_OBJ);
                                 <a href="editarUsuario.php?id_usuario=<?php echo $item->id; ?>" class="btn-icon btn-edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="controladores/eliminarUsuario.php" method="POST">
+                                <form action="controladores/eliminarUsuario.php" class="formEliminar" method="POST">
                                     <input type="hidden" name="id_usuario" value="<?php echo $item->id; ?>">
                                     <button type="submit" class="btn-icon btn-delete">
                                         <i class="fas fa-trash"></i>
@@ -456,80 +468,39 @@ $usuarios = $sql->fetchAll(PDO::FETCH_OBJ);
     }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    function openModal(action, id = null) {
-        const modal = document.getElementById('userModal');
-        const title = document.getElementById('modalTitle');
-
-        if (action === 'create') {
-            title.textContent = 'Nuevo Usuario';
-            document.getElementById('userForm').reset();
-        } else {
-            title.textContent = 'Editar Usuario';
-            // Aquí cargarías los datos del usuario
-        }
-
-        modal.style.display = 'block';
-    }
-
-    function closeModal() {
-        document.getElementById('userModal').style.display = 'none';
-    }
-
-    function saveUser() {
-        const form = document.getElementById('userForm');
-        if (form.checkValidity()) {
-            alert('Usuario guardado correctamente');
-            closeModal();
-        } else {
-            form.reportValidity();
-        }
-    }
-
-    function confirmDelete(id) {
-        if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-            alert('Usuario eliminado correctamente');
-        }
-    }
-
-    // Cerrar modal al hacer clic fuera
-    window.onclick = function(event) {
-        const modal = document.getElementById('userModal');
-        if (event.target === modal) {
-            closeModal();
-        }
-    }
-
-    // Búsqueda en tiempo real
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
+    // Filtros
+    document.getElementById('roleFilter').addEventListener('change', function() {
+        const roleFilter = this.value.toLowerCase();
         const rows = document.querySelectorAll('.crud-table tbody tr');
 
         rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
+            const role = row.querySelector('td:nth-child(4) span').textContent.toLowerCase();
+            // Elimina espacios extra
+            row.style.display = !roleFilter || role.trim() === roleFilter ? '' : 'none';
         });
     });
+</script>
 
-    // Filtros
-    document.getElementById('roleFilter').addEventListener('change', filterTable);
-    document.getElementById('statusFilter').addEventListener('change', filterTable);
-
-    function filterTable() {
-        const roleFilter = document.getElementById('roleFilter').value;
-        const statusFilter = document.getElementById('statusFilter').value;
-        const rows = document.querySelectorAll('.crud-table tbody tr');
-
-        rows.forEach(row => {
-            const role = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-            const status = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
-
-            const roleMatch = !roleFilter || role.includes(roleFilter);
-            const statusMatch = !statusFilter || status.includes(statusFilter);
-
-            row.style.display = roleMatch && statusMatch ? '' : 'none';
+<script>
+    document.querySelectorAll('.formEliminar').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Está seguro que desea eliminar este usuario?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // enviar el formulario si confirma
+                }
+            });
         });
-    }
+    });
 </script>
 
 <?php include("templates/footer.php"); ?>

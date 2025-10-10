@@ -2,8 +2,9 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de docente
-if ($_SESSION['rol'] !== 'docente') {
-    header("Location: index.php"); // si no lo mandamos al login
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'docente') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
+    header("Location: index.php");
     exit();
 }
 
@@ -15,8 +16,6 @@ $sql = $conexion->prepare("SELECT incidentes.id AS id_incidente, incidentes.fech
 $sql->bindParam(':id_usuario', $_SESSION['id_usuario']);
 $sql->execute();
 $lista_incidentes = $sql->fetchAll(PDO::FETCH_OBJ);
-
-
 ?>
 
 <title>Incidentes Registrados - Sistema de Gestión</title>
@@ -739,19 +738,19 @@ $lista_incidentes = $sql->fetchAll(PDO::FETCH_OBJ);
                 <tbody id="incidents-table-body">
                     <?php foreach ($lista_incidentes as $item) { ?>
                         <tr data-estado="<?php echo strtolower($item->estado); ?>">
-                            <td><?php echo $item->id_incidente; ?></td>
-                            <td><?php echo $item->nombre_estudiante . ' ' . $item->apellido_estudiante; ?></td>
+                            <td><?php echo htmlspecialchars($item->id_incidente); ?></td>
+                            <td><?php echo htmlspecialchars($item->nombre_estudiante) . ' ' . htmlspecialchars($item->apellido_estudiante); ?></td>
                             <td><?php echo $item->fecha_incidente; ?></td>
                             <td><?php echo $item->hora_incidente; ?></td>
                             <td><?php echo $item->lugar; ?></td>
                             <td><?php echo $item->tipo; ?></td>
                             <td><?php echo $item->descripcion; ?></td>
                             <?php if ($item->estado == 'pendiente') { ?>
-                                <td><span class="status-tag status-open"><?php echo $item->estado; ?></span></td>
+                                <td><span class="status-tag status-open"><?php echo htmlspecialchars($item->estado); ?></span></td>
                             <?php } elseif ($item->estado == 'investigacion') { ?>
-                                <td><span class="status-tag status-progress"><?php echo $item->estado; ?></span></td>
+                                <td><span class="status-tag status-progress"><?php echo htmlspecialchars($item->estado); ?></span></td>
                             <?php } else { ?>
-                                <td><span class="status-tag status-resolved"><?php echo $item->estado; ?></span></td>
+                                <td><span class="status-tag status-resolved"><?php echo htmlspecialchars($item->estado); ?></span></td>
                             <?php } ?>
                             <td>
                                 <?php if (!empty($item->evidencia)) {

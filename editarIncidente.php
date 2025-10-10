@@ -2,8 +2,9 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de docente
-if ($_SESSION['rol'] !== 'docente') {
-    header("Location: index.php"); // lo mandamos al login
+if (empty($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'docente') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
+    header("Location: index.php");
     exit();
 }
 
@@ -11,11 +12,25 @@ include("templates/header.php");
 include_once 'conexion/bd.php';
 
 // Obtener incidente para editar
-$id_incidente = $_GET['id_incidente'];
+if (!isset($_GET['id_incidente']) || !filter_var($_GET['id_incidente'], FILTER_VALIDATE_INT)) {
+    $_SESSION['errores'] = ["El identificador del incidente no es válido."];
+    header("Location: gestionIncidentes.php");
+    exit();
+}
+$id_incidente = (int) $_GET['id_incidente'];
+
+
 $sql = $conexion->prepare("SELECT estudiantes.nombre AS nombre_estudiante, estudiantes.apellido AS apellido_estudiante, incidentes.tipo AS tipo, incidentes.descripcion AS descripcion, incidentes.lugar AS lugar, incidentes.archivo_incidente AS evidencia FROM incidentes INNER JOIN estudiantes ON incidentes.estudiante_id = estudiantes.id WHERE incidentes.id=:id_incidente");
 $sql->bindParam(':id_incidente', $id_incidente);
 $sql->execute();
 $incidente = $sql->fetch(PDO::FETCH_OBJ);
+
+if (!$incidente) {
+    $_SESSION['errores'] = ["No se encontró el incidente solicitado."];
+    header("Location: gestionIncidentes.php");
+    exit();
+}
+
 ?>
 <title>Editar Incidente - Sistema de Gestión</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -385,7 +400,7 @@ $incidente = $sql->fetch(PDO::FETCH_OBJ);
                     <label for="incidentPriority">Lugar <span class="required">*</span></label>
                     <div class="input-with-icon">
                         <i class="fas fa-map-marker-alt"></i>
-                        <input type="text" id="incidentPriority" name="lugar" placeholder="Ej: Laboratorio 1" value="<?php echo $incidente->lugar; ?>" required>
+                        <input type="text" id="incidentPriority" name="lugar" placeholder="Ej: Laboratorio 1" value="<?php echo htmlspecialchars($incidente->lugar); ?>" required>
                     </div>
                 </div>
             </div>
@@ -404,7 +419,7 @@ $incidente = $sql->fetch(PDO::FETCH_OBJ);
                 <label for="incidentDescription">Descripción Detallada <span class="required">*</span></label>
                 <div class="input-with-icon">
                     <i class="fas fa-align-left"></i>
-                    <textarea id="incidentDescription" name="descripcion" placeholder="Describa el incidente con todos los detalles relevantes..." required> <?php echo $incidente->descripcion; ?></textarea>
+                    <textarea id="incidentDescription" name="descripcion" required><?= htmlspecialchars($incidente->descripcion) ?></textarea>
                 </div>
             </div>
 

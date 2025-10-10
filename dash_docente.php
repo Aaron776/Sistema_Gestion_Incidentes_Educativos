@@ -2,8 +2,9 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de docente
-if ($_SESSION['rol'] !== 'docente') {
-    header("Location: index.php"); // si no lo mandamos al login
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'docente') {
+    http_response_code(403);
+    echo json_encode([]);
     exit();
 }
 

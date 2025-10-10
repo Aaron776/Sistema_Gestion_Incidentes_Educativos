@@ -1,7 +1,14 @@
 <?php
+session_start();
 require '../vendor/autoload.php';
 use Dompdf\Dompdf;
 use Dompdf\Options;
+
+// Solo admin
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    die("Acceso no autorizado");
+}
+
 
 include("../conexion/bd.php");
 

@@ -1,7 +1,9 @@
 <?php
 include("autorizacion/auth.php");
 
-if ($_SESSION['rol'] !== 'admin') {
+// Validar que esté logueado y sea admin
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
@@ -78,22 +80,22 @@ $listaIncidentes = $sql->fetchAll(PDO::FETCH_OBJ);
             <tbody>
                 <?php foreach ($listaIncidentes as $item) { ?>
                     <tr>
-                        <td><span class="incident-id">INC-<?php echo $item->id_incidente; ?></span></td>
+                        <td><span class="incident-id">INC-<?php echo htmlspecialchars($item->id_incidente); ?></span></td>
                         <td>
                             <div class="incident-info">
-                                <div class="incident-title"><?php echo $item->descripcion; ?></div>
+                                <div class="incident-title"><?php echo htmlspecialchars($item->descripcion); ?></div>
                             </div>
                         </td>
-                        <td><span class="badge badge-technical"><?php echo $item->tipo; ?></span></td>
+                        <td><span class="badge badge-technical"><?php echo htmlspecialchars($item->tipo); ?></span></td>
                         <td>
                             <div class="reporter-info">
-                                <div class="reporter-name"><?php echo $item->nombre_estudiante; ?></div>
+                                <div class="reporter-name"><?php echo htmlspecialchars($item->nombre_estudiante); ?></div>
                             </div>
                         </td>
-                        <td><?php echo $item->usuario_reporta; ?><br></td>
-                        <td><span class="incident-date"><?php echo $item->fecha_incidente; ?></span></td>
+                        <td><?php echo htmlspecialchars($item->usuario_reporta); ?><br></td>
+                        <td><span class="incident-date"><?php echo htmlspecialchars($item->fecha_incidente); ?></span></td>
                         <td>
-                            <?php echo $item->estado; ?><br>
+                            <?php echo htmlspecialchars($item->estado); ?><br>
                         </td>
                         <td>
                             <div class="action-buttons">

@@ -2,8 +2,9 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de tutor
-if ($_SESSION['rol'] !== 'tutor') {
-    header("Location: index.php"); // si no lo mandamos al login
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'tutor') {
+    http_response_code(403);
+    echo json_encode([]);
     exit();
 }
 
@@ -43,9 +44,6 @@ include("templates/header.php");
                 <div class="welcome-actions">
                     <a href="incidentesMisEstudiantes.php" class="btn btn-primary">
                         <i class="fas fa-list"></i> Ver Incidentes de Estudiantes
-                    </a>
-                    <a href="comunicaciones.php" class="btn btn-secondary">
-                        <i class="fas fa-envelope"></i> Mensajes
                     </a>
                 </div>
             </div>

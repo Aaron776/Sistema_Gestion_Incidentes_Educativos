@@ -1,14 +1,18 @@
 <?php
 include("autorizacion/auth.php");
-if ($_SESSION['rol'] !== 'admin') {
+
+// Validar que esté logueado y sea admin
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
+
 include("templates/header.php");
 include("conexion/bd.php");
 
 // Obtener la lista de estudiantes
-$sql = $conexion->prepare("SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellido,estudiantes.curso,estudiantes.email,estudiantes.telefono,usuarios.nombre AS tutor  FROM estudiantes  LEFT JOIN  usuarios ON estudiantes.tutor_id = usuarios.id ORDER BY estudiantes.id DESC");
+$sql = $conexion->prepare("SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellido,estudiantes.curso,estudiantes.email,estudiantes.telefono,usuarios.nombre AS tutor  FROM estudiantes  LEFT JOIN  usuarios ON estudiantes.tutor_id = usuarios.id ORDER BY estudiantes.id DESC LIMIT 10");
 $sql->execute();
 $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
 ?>
@@ -23,22 +27,12 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
             <a href="registroEstudiantes.php" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Nuevo Estudiante
             </a>
-            <a class="btn btn-secondary">
-                <i class="fas fa-download"></i> Exportar
+            <a href="reportesPdf/reportesEstudiantes.php" target="_blank" class="btn btn-danger">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
             </a>
-        </div>
-        <div class="header-filters">
-            <div class="filter-group">
-                <label class="filter-label">Grado</label>
-                <select class="filter-select" id="gradoFilter">
-                    <option value="">Todos los grados</option>
-                    <option value="7">7° Grado</option>
-                    <option value="8">8° Grado</option>
-                    <option value="9">9° Grado</option>
-                    <option value="10">10° Grado</option>
-                    <option value="11">11° Grado</option>
-                </select>
-            </div>
+            <a href="reportesExcel/reportesEstudiantes.php" target="_blank" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
         </div>
     </div>
 
@@ -49,6 +43,16 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
             </div>
             <?php unset($_SESSION['exito']); ?>
         <?php endif; ?>
+        <?php if (isset($_SESSION['errores'])) : ?>
+                <div class="alert alert-danger">
+                    <ul>
+                        <?php foreach ($_SESSION['errores'] as $error) : ?>
+                            <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php unset($_SESSION['errores']); ?>
+            <?php endif; ?>
         <table class="crud-table">
             <thead>
                 <tr>
@@ -65,22 +69,22 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
             <tbody>
                 <?php foreach ($estudiantes as $item) : ?>
                     <tr>
-                        <td><span class="student-id">EST-<?php echo $item->id; ?></span></td>
+                        <td><span class="student-id">EST-<?php echo htmlspecialchars($item->id); ?></span></td>
                         <td>
                             <div class="student-info">
-                                <div class="student-avatar"><?php echo substr($item->nombre, 0, 2); ?></div>
+                                <div class="student-avatar"><?php echo htmlspecialchars(substr($item->nombre, 0, 2)); ?></div>
                                 <div class="student-details">
-                                    <div class="student-name"><?php echo $item->nombre; ?></div>
+                                    <div class="student-name"><?php echo htmlspecialchars($item->nombre); ?></div>
                                 </div>
                             </div>
                         </td>
-                        <td><?php echo $item->apellido; ?></td>
-                        <td><span class="grade-badge"><?php echo $item->curso; ?>°</span></td>
-                        <td><?php echo $item->email; ?></td>
-                        <td><?php echo $item->telefono; ?></td>
+                        <td><?php echo htmlspecialchars($item->apellido); ?></td>
+                        <td><span class="grade-badge"><?php echo htmlspecialchars($item->curso); ?>°</span></td>
+                        <td><?php echo htmlspecialchars($item->email); ?></td>
+                        <td><?php echo htmlspecialchars($item->telefono); ?></td>
                         <td>
                             <?php if ($item->tutor != null) { ?>
-                                <?php echo $item->tutor; ?>
+                                <?php echo htmlspecialchars($item->tutor); ?>
                             <?php } else { ?>
                                 Sin Tutor
                             <?php } ?>
@@ -406,6 +410,28 @@ $estudiantes = $sql->fetchAll(PDO::FETCH_OBJ);
 
     .btn-edit:hover {
         background: #1976d2;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .btn-danger{
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .btn-danger:hover{
+        background: #d32f2f;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .btn-success {
+        background: #e8f5e8;
+        color: #2e7d32;
+    }
+
+    .btn-success:hover {
+        background: #2e7d32;
         color: white;
         transform: scale(1.1);
     }

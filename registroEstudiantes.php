@@ -1,10 +1,12 @@
 <?php
 include("autorizacion/auth.php");
 
-if ($_SESSION['rol'] !== 'admin') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
+
 include("templates/header.php");
 include("conexion/bd.php");
 
@@ -86,7 +88,7 @@ $tutores = $sql->fetchAll(PDO::FETCH_OBJ);
                         <select id="tutor" name="tutor_id" required>
                             <option value="">Seleccione un tutor</option>
                             <?php foreach ($tutores as $item) { ?>
-                                <option value="<?php echo $item->id; ?>"><?php echo $item->nombre; ?></option>
+                                <option value="<?php echo $item->id; ?>"><?php echo htmlspecialchars($item->nombre); ?></option>
                             <?php } ?>
                         </select>
                     </div>

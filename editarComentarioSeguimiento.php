@@ -2,24 +2,32 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de tutor
-if ($_SESSION['rol'] !== 'tutor') {
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'tutor') {
     header("Location: index.php");
     exit();
 }
 
+
 include("templates/header.php");
 include("conexion/bd.php");
 
-$id_incidente = $_GET['id_incidente']; // ID del incidente que se está seguimiento
-$id_comentario = $_GET['id_comentario']; // ID del comentario que se está editando
+$id_incidente = isset($_GET['id_incidente']) ? (int)$_GET['id_incidente'] : 0; // ID del incidente que se está seguimiento
+$id_comentario = isset($_GET['id_comentario']) ? (int)$_GET['id_comentario'] : 0; // ID del comentario que se está editando
+
+if ($id_incidente <= 0 || $id_comentario <= 0) {
+    die("Parámetros inválidos.");
+}
+
 
 // Obtener el comentario a editar
 $sql = $conexion->prepare("SELECT id,comentario FROM comentarios_incidente WHERE id=:id_comentario");
-$sql->bindParam(':id_comentario', $id_comentario);
+$sql->bindParam(':id_comentario', $id_comentario,PDO::PARAM_INT);
 $sql->execute();
 $comentario = $sql->fetch(PDO::FETCH_OBJ);
 
-
+if (!$comentario) {
+    die("Comentario no encontrado o ya fue eliminado.");
+}
 
 ?>
 
@@ -31,17 +39,14 @@ $comentario = $sql->fetch(PDO::FETCH_OBJ);
     <div class="comment-form-card">
         <h3><i class="fas fa-plus-circle"></i> Editar Comentario</h3>
         <form id="commentForm" class="comment-form" method="post" action="controladores/editarComentarioSeguimiento.php">
-        <input type="hidden" name="incidente_id" value="<?php echo $id_incidente; ?>">
-        <input type="hidden" name="comentario_id" value="<?php echo $id_comentario; ?>">
+        <input type="hidden" name="incidente_id" value="<?php echo   htmlspecialchars($id_incidente); ?>">
+        <input type="hidden" name="comentario_id" value="<?php echo  htmlspecialchars($id_comentario); ?>">
             <div class="form-group">
                 <label for="commentText">Comentario <span class="required">*</span></label>
-                <textarea id="commentText" name="comentario" class="form-control" rows="4" placeholder="Escribe tu comentario aquí..." required> <?php echo $comentario->comentario; ?></textarea>
+                <textarea id="commentText" name="comentario" class="form-control" rows="4" placeholder="Escribe tu comentario aquí..." required><?php echo  htmlspecialchars($comentario->comentario); ?></textarea>
             </div>
             
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-paper-plane"></i> Actualizar Comentario
                 </button>

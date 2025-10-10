@@ -1,10 +1,12 @@
 <?php
 include("autorizacion/auth.php");
 
-if ($_SESSION['rol'] !== 'admin') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
+
 include("templates/header.php");
 ?>
 

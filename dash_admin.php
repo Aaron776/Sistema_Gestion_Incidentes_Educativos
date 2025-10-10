@@ -2,8 +2,9 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de admin
-if ($_SESSION['rol'] !== 'admin') {
-    header("Location: index.php"); // si no lo mandamos al login
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode([]);
     exit();
 }
 
@@ -410,30 +411,30 @@ include("controladores/dashAdmin.php");
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-    const notificationBell = document.getElementById('notificationBell');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    const notificationList = document.getElementById('notificationList');
-    const notificationCount = document.getElementById('notificationCount');
+        const notificationBell = document.getElementById('notificationBell');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationList = document.getElementById('notificationList');
+        const notificationCount = document.getElementById('notificationCount');
 
-    // Función para cargar notificaciones
-    async function cargarNotificaciones() {
-        const res = await fetch('get_notificaciones.php');
-        const data = await res.json();
+        // Función para cargar notificaciones
+        async function cargarNotificaciones() {
+            const res = await fetch('get_notificaciones.php');
+            const data = await res.json();
 
-        notificationList.innerHTML = '';
-        notificationCount.textContent = data.length;
+            notificationList.innerHTML = '';
+            notificationCount.textContent = data.length;
 
-        if(data.length === 0) {
-            notificationList.innerHTML = '<div class="notification-item">No hay notificaciones nuevas</div>';
-            return;
-        }
+            if (data.length === 0) {
+                notificationList.innerHTML = '<div class="notification-item">No hay notificaciones nuevas</div>';
+                return;
+            }
 
-        data.forEach(notif => {
-            const item = document.createElement('div');
-            item.classList.add('notification-item');
-            if(!notif.leido) item.classList.add('unread');
+            data.forEach(notif => {
+                const item = document.createElement('div');
+                item.classList.add('notification-item');
+                if (!notif.leido) item.classList.add('unread');
 
-            item.innerHTML = `
+                item.innerHTML = `
                 <div class="notification-icon"><i class="fas fa-exclamation-circle"></i></div>
                 <div class="notification-content">
                     <div class="notification-title">Nuevo incidente reportado</div>
@@ -441,29 +442,88 @@ include("controladores/dashAdmin.php");
                     <div class="notification-time">${notif.fecha_creacion}</div>
                 </div>
             `;
-            notificationList.appendChild(item);
-        });
-    }
-
-    cargarNotificaciones(); // Cargar al inicio
-
-    // Alternar dropdown
-    notificationBell.addEventListener('click', function(e) {
-        e.stopPropagation();
-        notificationDropdown.classList.toggle('active');
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
-            notificationDropdown.classList.remove('active');
+                notificationList.appendChild(item);
+            });
         }
-    });
 
-    notificationDropdown.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-});
+        cargarNotificaciones(); // Cargar al inicio
 
+        // Alternar dropdown
+        notificationBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('active');
+            }
+        });
+
+        notificationDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const notificationBell = document.getElementById('notificationBell');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationList = document.getElementById('notificationList');
+        const notificationCount = document.getElementById('notificationCount');
+
+        // Función para cargar notificaciones
+        async function cargarNotificaciones() {
+            try {
+                const res = await fetch('obtener_notificaciones.php');
+                const data = await res.json();
+
+                notificationList.innerHTML = '';
+                notificationCount.textContent = data.length;
+
+                if (data.length === 0) {
+                    notificationList.innerHTML = '<div class="notification-item">No hay notificaciones nuevas</div>';
+                    return;
+                }
+
+                data.forEach(notif => {
+                    const item = document.createElement('div');
+                    item.classList.add('notification-item');
+                    if (!notif.leida) item.classList.add('unread');
+
+                    item.innerHTML = `
+                    <div class="notification-icon"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="notification-content">
+                        <div class="notification-title">Nuevo incidente reportado</div>
+                        <div class="notification-desc">${notif.mensaje}</div>
+                        <div class="notification-time">${notif.fecha}</div>
+                    </div>
+                `;
+                    notificationList.appendChild(item);
+                });
+            } catch (error) {
+                console.error("Error al cargar notificaciones:", error);
+            }
+        }
+
+        cargarNotificaciones(); // cargar al inicio
+
+        // recargar cada 15 segundos
+        setInterval(cargarNotificaciones, 15000);
+
+        // Alternar menú
+        notificationBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('active');
+            }
+        });
+    });
+</script>
+
 
 <?php include 'templates/footer.php'; ?>

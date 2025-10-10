@@ -2,7 +2,8 @@
 include("autorizacion/auth.php"); // valida login y arranca sesión
 
 // Verificar que tenga rol de tutor
-if ($_SESSION['rol'] !== 'tutor') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'tutor') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
@@ -10,19 +11,25 @@ if ($_SESSION['rol'] !== 'tutor') {
 include("templates/header.php");
 include("conexion/bd.php");
 
-$id_incidente = $_GET['id_incidente']; // ID del incidente que se está seguimiento
-$id_tutor = $_SESSION['id_usuario']; // ID del tutor que está seguimiento el incidente
+$id_incidente = filter_input(INPUT_GET, 'id_incidente', FILTER_VALIDATE_INT); // ID del incidente que se está seguimiento
 
+if (!$id_incidente) {
+    $_SESSION['errores'] = ["ID de incidente inválido o no proporcionado."];
+    header("Location: gestionIncidentes.php");
+    exit();
+}
+ 
+$id_tutor = $_SESSION['id_usuario']; // ID del tutor que está seguimiento el incidente
 
 // Obtener cantidad de comentarios
 $sql = $conexion->prepare("SELECT COUNT(*) AS total_comentarios FROM comentarios_incidente WHERE incidente_id=:id_incidente");
-$sql->bindParam(':id_incidente', $id_incidente);
+$sql->bindParam(':id_incidente', $id_incidente, PDO::PARAM_INT);
 $sql->execute();
 $cantidadComentarios = $sql->fetch(PDO::FETCH_OBJ);
 
 // Obtener la lista de comentarios de este incidente de mi estudiante
 $sql = $conexion->prepare("SELECT * FROM comentarios_incidente WHERE incidente_id=:id_incidente ORDER BY fecha DESC LIMIT 10");
-$sql->bindParam(':id_incidente', $id_incidente);
+$sql->bindParam(':id_incidente', $id_incidente, PDO::PARAM_INT);
 $sql->execute();
 $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
 
@@ -56,9 +63,6 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-paper-plane"></i> Publicar Comentario
                 </button>
@@ -72,6 +76,13 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
             <h3><i class="fas fa-list"></i> Comentarios Existentes</h3>
             <span class="comments-count"><?php echo $cantidadComentarios->total_comentarios; ?> comentarios</span>
         </div>
+
+        <?php if (isset($_SESSION['exito'])) : ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> <?= $_SESSION['exito']; ?>
+            </div>
+            <?php unset($_SESSION['exito']); ?>
+        <?php endif; ?>
 
         <div class="comments-list">
             <?php foreach ($comentarios as $item) { ?>
@@ -89,7 +100,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
                                 <a href="editarComentarioSeguimiento.php?id_incidente=<?php echo $id_incidente; ?>&id_comentario=<?php echo $item->id; ?>" class="btn-icon btn-edit" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form method="post" action="controladores/eliminarComentario.php?id_incidente=<?php echo $id_incidente; ?>">
+                                <form method="post" action="controladores/eliminarComentario.php?id_incidente=<?php echo $id_incidente; ?>" class="formEliminar">
                                     <input type="hidden" name="comentario_id" value="<?php echo $item->id; ?>">
                                     <button class="btn-icon btn-delete" title="Eliminar">
                                         <i class="fas fa-trash"></i>
@@ -99,7 +110,7 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
                         </div>
                     </div>
                     <div class="comment-content">
-                        <p><?php echo $item->comentario; ?></p>
+                        <p><?php echo htmlspecialchars($item->comentario); ?></p>
                     </div>
                     <div class="comment-footer">
                         <span class="comment-status"><i class="fas fa-check-circle"></i> Publicado</span>
@@ -522,11 +533,32 @@ $comentarios = $sql->fetchAll(PDO::FETCH_OBJ);
     }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Toggle sidebar on mobile
     document.getElementById('menuToggle').addEventListener('click', function() {
         document.querySelector('.sidebar').classList.toggle('open');
         document.querySelector('.overlay').classList.toggle('open');
+    });
+</script>
+
+<script>
+    document.querySelectorAll('.formEliminar').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Está seguro que desea eliminar este comentario?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // enviar el formulario si confirma
+                }
+            });
+        });
     });
 </script>
 

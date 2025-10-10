@@ -1,21 +1,36 @@
 <?php
 include("autorizacion/auth.php");
 
-if ($_SESSION['rol'] !== 'admin') {
+// Validar que esté logueado y sea admin
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol'] !== 'admin') {
+    $_SESSION['errores'] = ["No tienes permisos para acceder a esta sección."];
     header("Location: index.php");
     exit();
 }
+
 include("templates/header.php");
 include("conexion/bd.php");
 
 // Obtener el ID del usuario a editar
 $id_usuario = $_GET['id_usuario'];
 
+if (empty($id_usuario) || !filter_var($id_usuario, FILTER_VALIDATE_INT)) {
+    $_SESSION['errores'] = ["ID de usuario inválido."];
+    header("Location: gestionUsuarios.php");
+    exit();
+}
+
 // Obtener la información del usuario
 $sql = $conexion->prepare("SELECT nombre,email,rol FROM usuarios WHERE id = :id_usuario");
 $sql->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
 $sql->execute();
 $usuario = $sql->fetch(PDO::FETCH_OBJ);
+
+if (!$usuario) {
+    $_SESSION['errores'] = ["El usuario no existe o fue eliminado."];
+    header("Location: gestionUsuarios.php");
+    exit();
+}
 ?>
 
 <?php include("templates/topbar.php"); ?>
@@ -44,7 +59,7 @@ $usuario = $sql->fetch(PDO::FETCH_OBJ);
                 <?php unset($_SESSION['errores']); ?>
             <?php endif; ?>
         
-            <input type="hidden" name="id_usuario" value="<?php echo $id_usuario; ?>">
+            <input type="hidden" name="id_usuario" value="<?php echo htmlspecialchars($id_usuario); ?>">
             <!-- Información Personal -->
             <div class="form-section">
                 <div class="section-header">
@@ -54,12 +69,12 @@ $usuario = $sql->fetch(PDO::FETCH_OBJ);
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="nombre">Nombres *</label>
-                        <input type="text" id="nombre" name="nombre" value="<?php echo $usuario->nombre; ?>" required placeholder="Ingrese los nombres">
+                        <input type="text" id="nombre" name="nombre" value="<?php echo htmlspecialchars($usuario->nombre); ?>" required placeholder="Ingrese los nombres">
                         <span class="form-help">Ej: María José</span>
                     </div>
                     <div class="form-group">
                         <label for="email">Correo Electrónico *</label>
-                        <input type="email" id="email" name="email" value="<?php echo $usuario->email; ?>" required placeholder="usuario@instituto.edu">
+                        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($usuario->email); ?>" required placeholder="usuario@instituto.edu">
                         <span class="form-help">Debe ser un correo valido</span>
                     </div>
                 </div>
@@ -100,7 +115,7 @@ $usuario = $sql->fetch(PDO::FETCH_OBJ);
                     <i class="fas fa-redo"></i> Limpiar
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Crear Usuario
+                    <i class="fas fa-edit"></i> Editar Usuario
                 </button>
             </div>
         </form>
