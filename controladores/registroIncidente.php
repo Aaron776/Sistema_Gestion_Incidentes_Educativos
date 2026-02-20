@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
     $lugar = trim($_POST['lugar']);
     $fecha_incidente = trim($_POST['fecha_incidente']);
     $hora_incidente = trim($_POST['hora_incidente']);
-    $errores=[];
+    $errores = [];
 
     // ---------------- VALIDACIONES ----------------
     if (empty($tipo)) {
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
 
     if (empty($descripcion)) {
         $errores[] = "La descripción es obligatoria.";
-    }elseif ($descripcion !== strip_tags($descripcion)) {
+    } elseif ($descripcion !== strip_tags($descripcion)) {
         $errores[] = 'No se permiten etiquetas HTML en el nombre';
     } elseif (preg_match('/(viagra|casino|bitcoin|porno)/i', $descripcion)) {
         $errores[] = 'La descripción contiene contenido no permitido';
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
 
     if (empty($hora_incidente)) {
         $errores[] = "La hora es obligatoria.";
-    }elseif ($hora_incidente !== strip_tags($hora_incidente)) {
+    } elseif ($hora_incidente !== strip_tags($hora_incidente)) {
         $errores[] = 'No se permiten etiquetas HTML en la hora';
     }
 
@@ -81,10 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
     // Manejo del archivo (si se subió)
     $archivo_incidente = null;
     if (isset($_FILES['archivo_incidente']) && $_FILES['archivo_incidente']['error'] === UPLOAD_ERR_OK) {
-        $allowed_types = ['image/jpeg','image/png','application/pdf'];
+        $allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
         if (!in_array($_FILES['archivo_incidente']['type'], $allowed_types)) {
             $errores[] = "Tipo de archivo no permitido.";
-        } elseif ($_FILES['archivo_incidente']['size'] > 5*1024*1024) {
+        } elseif ($_FILES['archivo_incidente']['size'] > 5 * 1024 * 1024) {
             $errores[] = "El archivo es demasiado grande (máx. 5MB).";
         } else {
             $nombreArchivo = time() . '_' . basename($_FILES['archivo_incidente']['name']);
@@ -98,13 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
     }
 
     // Si no hay errores en la validación se guarda el incidente en la base de datos
-    if(empty($errores)){
+    if (empty($errores)) {
         try {
             // Iniciar transacción
             $conexion->beginTransaction();
-    
+
             // Insertar incidente
-            $sql = $conexion->prepare(" INSERT INTO incidentes(estudiante_id, usuario_reporta_id, fecha_incidente, hora_incidente, lugar, tipo, descripcion, archivo_incidente) VALUES (:estudiante_id, :usuario_reporta_id, :fecha_incidente, :hora_incidente, :lugar, :tipo, :descripcion, :archivo_incidente) RETURNING id");
+            $sql = $conexion->prepare("INSERT INTO incidentes(estudiante_id, usuario_reporta_id, fecha_incidente, hora_incidente, lugar, tipo, descripcion, archivo_incidente) VALUES (:estudiante_id, :usuario_reporta_id, :fecha_incidente, :hora_incidente, :lugar, :tipo, :descripcion, :archivo_incidente)");
             $sql->bindParam(':estudiante_id', $estudiante, PDO::PARAM_INT);
             $sql->bindParam(':usuario_reporta_id', $usuario_reporta, PDO::PARAM_INT);
             $sql->bindParam(':tipo', $tipo, PDO::PARAM_STR);
@@ -113,10 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
             $sql->bindParam(':fecha_incidente', $fecha_incidente, PDO::PARAM_STR);
             $sql->bindParam(':hora_incidente', $hora_incidente, PDO::PARAM_STR);
             $sql->bindParam(':archivo_incidente', $archivo_incidente, PDO::PARAM_STR);
-    
+
             $sql->execute();
-            $incidente_id = $sql->fetchColumn(); // ID del incidente insertado
-    
+            $incidente_id = $conexion->lastInsertId(); // ID del incidente insertado (MySQL)
+
             // Obtener nombre y apellido del docente que reportó el incidente
             $sql_doc = $conexion->prepare("SELECT nombre FROM usuarios WHERE id = :id");
             $sql_doc->bindParam(':id', $usuario_reporta);
@@ -135,23 +135,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tipo'], $_POST['estudi
             $sql_notif->bindParam(':incidente_id', $incidente_id);
             $sql_notif->execute();
 
-    
+            // Confirmar la transacción
+            $conexion->commit();
+
             $_SESSION['exito'] = "Incidente registrado correctamente";
             header("Location: ../incidentesReportados.php");
             exit();
-    
         } catch (PDOException $e) {
             $conexion->rollBack();
             echo "Error al registrar el incidente: " . $e->getMessage();
-        }  
-    }else{
+        }
+    } else {
         $_SESSION['errores'] = $errores;
         header("Location: ../registroIncidentes.php");
         exit();
     }
-
-    
-
 } else {
     $_SESSION['errores'] = ["Error al registrar el incidente."];
     header("Location: ../registroIncidentes.php");

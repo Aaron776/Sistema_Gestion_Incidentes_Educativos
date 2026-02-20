@@ -9,7 +9,11 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
     exit();
 }
 
-// Obtener las últimas 10 notificaciones
+// Parámetro: si se pide todas (al abrir el panel) o solo las no leídas (para el conteo del badge)
+$soloNoLeidas = isset($_GET['solo_no_leidas']) && $_GET['solo_no_leidas'] === '1';
+
+$whereClause = $soloNoLeidas ? "WHERE leida = FALSE" : "";
+
 $sql = $conexion->prepare("
     SELECT 
         id, 
@@ -17,8 +21,9 @@ $sql = $conexion->prepare("
         fecha, 
         leida 
     FROM notificaciones 
+    {$whereClause}
     ORDER BY id DESC 
-    LIMIT 10
+    LIMIT 20
 ");
 $sql->execute();
 $notificaciones = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -32,4 +37,3 @@ foreach ($notificaciones as &$notif) {
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($notificaciones);
 exit;
-?>

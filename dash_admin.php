@@ -339,28 +339,113 @@ include("controladores/dashAdmin.php");
 </style>
 
 <script>
-    // Funcionalidad para el menú de notificaciones
     document.addEventListener('DOMContentLoaded', function() {
         const notificationBell = document.getElementById('notificationBell');
         const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationList = document.getElementById('notificationList');
+        const notificationCount = document.getElementById('notificationCount');
+        const marcarLeidasBtn = document.getElementById('marcarLeidas');
 
-        // Alternar menú de notificaciones
-        notificationBell.addEventListener('click', function(e) {
+        let panelAbierto = false;
+
+        // ── 1. Actualizar badge con conteo de no leídas ──────────────────
+        async function actualizarConteo() {
+            try {
+                const res = await fetch('obtener_notificaciones.php?solo_no_leidas=1');
+                const data = await res.json();
+                const total = data.length;
+
+                notificationCount.textContent = total;
+                notificationCount.style.display = total > 0 ? 'flex' : 'none';
+            } catch (e) {
+                console.error('Error al obtener conteo:', e);
+            }
+        }
+
+        // ── 2. Cargar notificaciones en el panel ─────────────────────────
+        async function cargarNotificaciones() {
+            try {
+                const res = await fetch('obtener_notificaciones.php');
+                const data = await res.json();
+
+                notificationList.innerHTML = '';
+
+                if (data.length === 0) {
+                    notificationList.innerHTML = `
+                        <div class="notification-item" style="justify-content:center;color:#888;font-size:13px;">
+                            <i class="fas fa-check-circle" style="margin-right:8px;color:#4caf50;"></i>
+                            No hay notificaciones nuevas
+                        </div>`;
+                    return;
+                }
+
+                data.forEach(notif => {
+                    const item = document.createElement('div');
+                    item.classList.add('notification-item');
+                    if (!notif.leida) item.classList.add('unread');
+
+                    item.innerHTML = `
+                        <div class="notification-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Nuevo incidente reportado</div>
+                            <div class="notification-desc">${notif.mensaje}</div>
+                            <div class="notification-time"><i class="fas fa-clock" style="margin-right:4px;"></i>${notif.fecha}</div>
+                        </div>
+                    `;
+                    notificationList.appendChild(item);
+                });
+            } catch (e) {
+                console.error('Error al cargar notificaciones:', e);
+            }
+        }
+
+        // ── 3. Marcar todas como leídas en BD y resetear badge ───────────
+        async function marcarTodasLeidas() {
+            try {
+                await fetch('marcar_leidas.php', {
+                    method: 'POST'
+                });
+                notificationCount.textContent = '0';
+                notificationCount.style.display = 'none';
+                // Quitar clase 'unread' de los items visibles
+                document.querySelectorAll('.notification-item.unread')
+                    .forEach(el => el.classList.remove('unread'));
+            } catch (e) {
+                console.error('Error al marcar leídas:', e);
+            }
+        }
+
+        // ── 4. Toggle del panel ──────────────────────────────────────────
+        notificationBell.addEventListener('click', async function(e) {
             e.stopPropagation();
-            notificationDropdown.classList.toggle('active');
-        });
+            panelAbierto = !panelAbierto;
+            notificationDropdown.classList.toggle('active', panelAbierto);
 
-        // Cerrar menú al hacer clic fuera
-        document.addEventListener('click', function(e) {
-            if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
-                notificationDropdown.classList.remove('active');
+            if (panelAbierto) {
+                await cargarNotificaciones();
+                await marcarTodasLeidas();
             }
         });
 
-        // Prevenir que el clic dentro del menú lo cierre
-        notificationDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
+        // ── 5. Botón "Marcar todas como leídas" ──────────────────────────
+        marcarLeidasBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await marcarTodasLeidas();
         });
+
+        // ── 6. Cerrar al hacer clic fuera ────────────────────────────────
+        document.addEventListener('click', function(e) {
+            if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('active');
+                panelAbierto = false;
+            }
+        });
+
+        // ── 7. Polling inicial y periódico del badge ──────────────────────
+        actualizarConteo();
+        setInterval(actualizarConteo, 15000);
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -409,121 +494,6 @@ include("controladores/dashAdmin.php");
             }
         });
     });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const notificationBell = document.getElementById('notificationBell');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notificationList = document.getElementById('notificationList');
-        const notificationCount = document.getElementById('notificationCount');
-
-        // Función para cargar notificaciones
-        async function cargarNotificaciones() {
-            const res = await fetch('get_notificaciones.php');
-            const data = await res.json();
-
-            notificationList.innerHTML = '';
-            notificationCount.textContent = data.length;
-
-            if (data.length === 0) {
-                notificationList.innerHTML = '<div class="notification-item">No hay notificaciones nuevas</div>';
-                return;
-            }
-
-            data.forEach(notif => {
-                const item = document.createElement('div');
-                item.classList.add('notification-item');
-                if (!notif.leido) item.classList.add('unread');
-
-                item.innerHTML = `
-                <div class="notification-icon"><i class="fas fa-exclamation-circle"></i></div>
-                <div class="notification-content">
-                    <div class="notification-title">Nuevo incidente reportado</div>
-                    <div class="notification-desc">${notif.mensaje}</div>
-                    <div class="notification-time">${notif.fecha_creacion}</div>
-                </div>
-            `;
-                notificationList.appendChild(item);
-            });
-        }
-
-        cargarNotificaciones(); // Cargar al inicio
-
-        // Alternar dropdown
-        notificationBell.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notificationDropdown.classList.toggle('active');
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
-                notificationDropdown.classList.remove('active');
-            }
-        });
-
-        notificationDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    });
 </script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const notificationBell = document.getElementById('notificationBell');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notificationList = document.getElementById('notificationList');
-        const notificationCount = document.getElementById('notificationCount');
-
-        // Función para cargar notificaciones
-        async function cargarNotificaciones() {
-            try {
-                const res = await fetch('obtener_notificaciones.php');
-                const data = await res.json();
-
-                notificationList.innerHTML = '';
-                notificationCount.textContent = data.length;
-
-                if (data.length === 0) {
-                    notificationList.innerHTML = '<div class="notification-item">No hay notificaciones nuevas</div>';
-                    return;
-                }
-
-                data.forEach(notif => {
-                    const item = document.createElement('div');
-                    item.classList.add('notification-item');
-                    if (!notif.leida) item.classList.add('unread');
-
-                    item.innerHTML = `
-                    <div class="notification-icon"><i class="fas fa-exclamation-circle"></i></div>
-                    <div class="notification-content">
-                        <div class="notification-title">Nuevo incidente reportado</div>
-                        <div class="notification-desc">${notif.mensaje}</div>
-                        <div class="notification-time">${notif.fecha}</div>
-                    </div>
-                `;
-                    notificationList.appendChild(item);
-                });
-            } catch (error) {
-                console.error("Error al cargar notificaciones:", error);
-            }
-        }
-
-        cargarNotificaciones(); // cargar al inicio
-
-        // recargar cada 15 segundos
-        setInterval(cargarNotificaciones, 15000);
-
-        // Alternar menú
-        notificationBell.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notificationDropdown.classList.toggle('active');
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
-                notificationDropdown.classList.remove('active');
-            }
-        });
-    });
-</script>
-
 
 <?php include 'templates/footer.php'; ?>
